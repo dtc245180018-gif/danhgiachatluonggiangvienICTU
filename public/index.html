@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Đánh Giá ICTU</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --ictu-blue: #0056b3; --ictu-dark: #002d5b; --bg: #f4f7fa; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; line-height: 1.5; }
+        .container { max-width: 1200px; margin: 30px auto; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; min-height: 80vh; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(90deg, var(--ictu-dark), var(--ictu-blue)); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-img { height: 50px; background: white; border-radius: 50%; padding: 2px; }
+        .site-name h1 { margin: 0; font-size: 1.2rem; text-transform: uppercase; }
+        .site-name p { margin: 0; font-size: 0.8rem; opacity: 0.9; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary { background: var(--ictu-blue); color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-purple { background: #6f42c1; color: white; }
+        .btn-outline { background: transparent; border: 1px solid white; color: white; }
+        .dashboard-content { padding: 30px; flex: 1; }
+        .hidden { display: none !important; }
+        .login-wrapper { display: flex; justify-content: center; align-items: center; flex: 1; padding: 20px; }
+        .login-box { width: 100%; max-width: 400px; text-align: center; padding: 30px; border: 1px solid #eee; border-radius: 8px; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .form-control { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; }
+        .welcome-banner { background: #e3f2fd; color: var(--ictu-dark); padding: 15px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background: var(--ictu-blue); color: white; padding: 12px; text-align: left; white-space: nowrap; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .modal-box { background: white; width: 600px; max-width: 90%; padding: 25px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee; }
+        .score-badge { padding: 4px 10px; border-radius: 12px; color: white; font-weight: bold; font-size: 0.9rem; }
+        .high { background: #28a745; } .med { background: #ffc107; color: #333; } .low { background: #dc3545; }
+        .comment-section { margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid var(--ictu-blue); }
+        .comment-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0; font-style: italic; color: #555; }
+        .footer { text-align: center; padding: 15px; background: #f8f9fa; border-top: 1px solid #e0e0e0; color: #666; margin-top: auto; }
+        .verified-icon-fa { color: #1877F2; margin-left: 5px; font-size: 14px; vertical-align: middle; }
+        .tab-menu { border-bottom: 2px solid #eee; margin-bottom: 20px; display: flex; gap: 10px; overflow-x: auto; }
+        .tab-btn { background: none; border: none; padding: 10px 20px; font-size: 1rem; color: #666; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+        .tab-btn.active { color: var(--ictu-blue); border-bottom-color: var(--ictu-blue); font-weight: bold; }
+        .admin-toolbar { background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid #ffeeba; flex-wrap: wrap; }
+        .input-date { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        #notify-modal .modal-box { border-top: 5px solid #ffc107; }
+        .forgot-link { display: block; text-align: right; margin-bottom: 15px; color: var(--ictu-blue); text-decoration: none; font-size: 0.9rem; cursor: pointer; }
+        .forgot-link:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            .container { margin: 0; border-radius: 0; min-height: 100vh; }
+            .header { flex-direction: column; gap: 15px; }
+            .welcome-banner, .admin-toolbar { flex-direction: column; align-items: flex-start; }
+            .admin-toolbar .btn { width: 100%; margin-top: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="logo-area">
+            <img src="ICTU.png" class="logo-img">
+            <div class="site-name">
+                <h1>Hệ Thống Đánh Giá Giảng Dạy</h1>
+                <p>Trường Đại học Công nghệ Thông tin & Truyền thông</p>
+            </div>
+        </div>
+        <div id="user-controls" class="hidden" style="display:flex; gap:10px;">
+            <button class="btn btn-warning" onclick="openChangePass()"><i class="fas fa-key"></i> Đổi MK</button>
+            <button class="btn btn-outline" onclick="logout()">Thoát</button>
+        </div>
+    </div>
+
+    <div id="login-screen" class="login-wrapper">
+        <div class="login-box">
+            <h2 style="color: var(--ictu-blue);">Đăng Nhập</h2>
+            <input type="text" id="username" class="form-control" placeholder="Tên đăng nhập">
+            <input type="password" id="password" class="form-control" placeholder="Mật khẩu">
+            
+            <a href="#" class="forgot-link" onclick="openForgotPass()">Quên mật khẩu?</a>
+
+            <button class="btn btn-primary" style="width:100%;" onclick="login()">Đăng Nhập</button>
+            <div id="login-msg" style="margin-top:15px; color:red;"></div>
+            <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:10px;">Hệ thống chỉ mang mục đích học tập và tham khảo, KHÔNG mang mục đích mạo danh hay lừa đảo hoặc bất kỳ hoạt động mua bán nào</div>
+        </div>
+    </div>
+
+    <div id="sv-dashboard" class="dashboard-content hidden">
+        <div class="welcome-banner"><div><i class="fas fa-user-graduate"></i> Xin chào, <b id="sv-name"></b></div></div>
+        <div id="sv-list">Loading...</div>
+        <div id="sv-form" class="hidden" style="margin-top:20px;">
+            <div style="background:#fff; padding:15px; border-left:4px solid var(--ictu-blue); margin-bottom:20px;">
+                <h3 style="margin:0; color:var(--ictu-blue);">Đánh giá môn: <span id="form-subject"></span></h3>
+            </div>
+            <div id="dynamic-questions"></div>
+            <label style="display:block; margin-top:20px; font-weight:bold;">Ý kiến khác:</label>
+            <textarea id="form-comment" class="form-control" rows="3"></textarea>
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button class="btn btn-primary" style="flex:1" onclick="submitEval()">Gửi</button>
+                <button class="btn btn-danger" style="flex:1" onclick="cancelEval()">Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gv-dashboard" class="dashboard-content hidden">
+        <div class="welcome-banner"><div><i class="fas fa-chalkboard-teacher"></i> Xin chào, <b id="gv-name"></b></div></div>
+        <div class="table-responsive"><table id="gv-table"><thead><tr><th>Môn học</th><th>Điểm TB</th><th>Hành động</th></tr></thead><tbody id="gv-body"></tbody></table></div>
+    </div>
+
+    <div id="admin-dashboard" class="dashboard-content hidden">
+        <div class="welcome-banner">
+            <div><i class="fas fa-user-shield"></i> Phòng Khảo Thí</div>
+            <div>Tiến độ chung: <span class="score-badge high" id="adm-progress">0/0</span></div>
+        </div>
+
+        <div class="tab-menu">
+            <button class="tab-btn active" onclick="switchTab('analytics')">Thống kê Điểm</button>
+            <button class="tab-btn" onclick="switchTab('notification')">Gửi Thông Báo</button>
+            <button class="tab-btn" onclick="switchTab('questions')">Cấu hình Câu hỏi</button>
+            <button class="tab-btn" onclick="switchTab('progress')">Theo dõi Tiến độ</button>
+            <button class="tab-btn" onclick="switchTab('users')">Quản lý Tài khoản</button>
+        </div>
+
+        <div id="tab-analytics">
+            <div class="admin-toolbar">
+                <i class="fas fa-file-export" style="font-size: 1.2rem; color: #28a745;"></i>
+                <div style="flex:1"><strong>Xuất Báo Cáo (Chuẩn ICTU):</strong></div>
+                <button class="btn btn-success" onclick="exportICTU('ALL')">Tất cả</button>
+                <button class="btn btn-info" onclick="exportICTU('HIGH')">Đạt (>65%)</button>
+                <button class="btn btn-warning" onclick="exportICTU('LOW')">Cải thiện (<65%)</button>
+            </div>
+            <div class="table-responsive"><table id="adm-table"><thead><tr><th>Giảng viên</th><th>Môn học</th><th>Điểm TB (1-5)</th><th>Đạt (%)</th><th>Hành động</th></tr></thead><tbody id="adm-body"></tbody></table></div>
+        </div>
+
+        <div id="tab-notification" class="hidden">
+            <div style="max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+                <h3 style="color: var(--ictu-blue); margin-top: 0;"><i class="fas fa-paper-plane"></i> Gửi Thông Báo</h3>
+                <p>Hệ thống sẽ gửi Email đến toàn thể sinh viên và hiển thị thông báo trên màn hình của họ.</p>
+                <input type="text" id="notify-title" class="form-control" placeholder="Tiêu đề (VD: Nhắc nhở đánh giá)">
+                <textarea id="notify-content" class="form-control" rows="5" placeholder="Nội dung chi tiết..."></textarea>
+                <button class="btn btn-primary" onclick="sendBroadcast()" style="width: 100%;">Gửi Ngay</button>
+            </div>
+        </div>
+
+        <div id="tab-questions" class="hidden"><div class="admin-toolbar"><button class="btn btn-primary" onclick="openQuestionModal()"><i class="fas fa-plus"></i> Thêm Câu hỏi</button></div><div class="table-responsive"><table id="question-table"><thead><tr><th>ID</th><th>Nội dung câu hỏi</th><th>Hành động</th></tr></thead><tbody id="question-body"></tbody></table></div></div>
+        <div id="tab-progress" class="hidden"><div class="admin-toolbar" style="background:#fff3cd; border-color:#ffeeba;"><div style="flex:1"><i class="fas fa-chart-line"></i> Tổng: <b id="stat-total">0</b> | Chưa làm: <b id="stat-pending" style="color:red">0</b></div><label><input type="checkbox" id="filter-incomplete" onchange="loadProgress()"> Chỉ hiện sinh viên chưa làm</label></div><div class="table-responsive"><table id="progress-table"><thead><tr><th>SV</th><th>Lớp SH</th><th>Môn</th><th>GV</th><th>Trạng thái</th></tr></thead><tbody id="progress-body"></tbody></table></div></div>
+        <div id="tab-users" class="hidden"><div class="admin-toolbar" style="background:#e8f4fd; border-color:#b8daff;"><i class="fas fa-search" style="color:#004085"></i><input type="text" id="user-search" class="form-control" style="width:200px; margin-bottom:0;" placeholder="Nhập Mã hoặc Tên..." onkeyup="searchUsers()"><div style="flex:1"></div><button class="btn btn-purple" onclick="syncData()">Đồng bộ dữ liệu từ Hệ thống</button><button class="btn btn-danger" onclick="bulkAction('LOCK')">Khóa All</button><button class="btn btn-success" onclick="bulkAction('UNLOCK')">Mở All</button></div><div class="table-responsive"><table id="user-table"><thead><tr><th>ID</th><th>Họ Tên</th><th>Info</th><th>Khoa/Học vị</th><th>Vai trò</th><th>Status</th><th>Action</th></tr></thead><tbody id="user-body"></tbody></table></div></div>
+    </div>
+
+    <div class="footer">&copy; 2026 Hệ thống Đảm bảo Chất lượng ICTU. <br><strong>Dev by Nguyễn Ngọc Thắng KTPM K23A<i class="fas fa-check-circle verified-icon-fa"></i></strong></div>
+</div>
+
+<div id="forgot-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="width: 400px;">
+        <h3 style="margin-top:0; color:var(--ictu-blue);">Khôi phục Mật khẩu</h3>
+        <p>Vui lòng nhập Email bạn đã đăng ký trên hệ thống để nhận lại mật khẩu.</p>
+        <input type="email" id="forgot-email" class="form-control" placeholder="Ví dụ: sv01@ictu.edu.vn">
+        <div style="text-align:right; margin-top:10px;">
+            <button class="btn btn-primary" onclick="submitForgotPassword()">Gửi</button>
+            <button class="btn btn-danger" onclick="closeModal('forgot-modal')">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<div id="notify-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div style="text-align: center;">
+            <i class="fas fa-bell" style="font-size: 3rem; color: #ffc107;"></i>
+            <h3 id="popup-title" style="margin: 10px 0; color: #333;"></h3>
+        </div>
+        <div id="popup-content" style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; white-space: pre-line;"></div>
+        <div style="text-align: center;">
+            <button class="btn btn-primary" onclick="closeModal('notify-modal')">Đã Hiểu</button>
+        </div>
+    </div>
+</div>
+
+<div id="question-modal" class="modal-overlay hidden"><div class="modal-box" style="width:500px;"><h3 style="margin-top:0; color:var(--ictu-blue);">Cập nhật Câu hỏi</h3><input type="hidden" id="q-id"><textarea id="q-content" class="form-control" rows="3" placeholder="Nội dung câu hỏi..."></textarea><div style="text-align:right; margin-top:10px;"><button class="btn btn-primary" onclick="saveQuestion()">Lưu</button><button class="btn btn-danger" onclick="closeModal('question-modal')">Hủy</button></div></div></div>
+<div id="detail-modal" class="modal-overlay hidden"><div class="modal-box"><div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:10px;"><h3>Chi Tiết</h3><button onclick="closeModal('detail-modal')" style="border:none;font-size:1.5rem;">&times;</button></div><div id="modal-content" style="margin:20px 0;"></div><div id="modal-comments" class="comment-section hidden"><h4>Ý kiến:</h4><div id="comment-list"></div></div><div style="text-align:right;"><button class="btn btn-danger" onclick="closeModal('detail-modal')">Đóng</button></div></div></div>
+<div id="password-modal" class="modal-overlay hidden"><div class="modal-box" style="width:400px;"><h3>Đổi Mật Khẩu</h3><input type="password" id="old-pass" class="form-control" placeholder="Mật khẩu cũ"><input type="password" id="new-pass" class="form-control" placeholder="Mật khẩu mới"><div style="text-align:right;margin-top:10px;"><button class="btn btn-primary" onclick="changePassword()">Lưu</button><button class="btn btn-danger" onclick="closeModal('password-modal')">Hủy</button></div></div></div>
+
+<script>
+    let currentUser = null;
+    let currentRole = null;
+    let currentTask = null;
+
+    // HÀM ẨN TẤT CẢ MÀN HÌNH
+    function hideAllScreens() {
+        const screens = [
+            'login-screen', 'sv-dashboard', 'gv-dashboard', 'admin-dashboard',
+            'detail-modal', 'password-modal', 'question-modal', 'notify-modal', 'forgot-modal'
+        ];
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+    }
+
+    // HÀM KHỞI TẠO
+    function initApp() {
+        const u = localStorage.getItem('user');
+        const r = localStorage.getItem('role');
+        hideAllScreens();
+
+        if (u && r) {
+            currentUser = JSON.parse(u);
+            currentRole = r;
+            showDashboard();
+        } else {
+            // MẶC ĐỊNH HIỆN MÀN HÌNH ĐĂNG NHẬP
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+    }
+
+    // ĐĂNG NHẬP
+    async function login() {
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: u, password: p })
+            });
+            const data = await res.json();
+            if (data.success) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('role', data.role);
+                currentUser = data.user;
+                currentRole = data.role;
+                showDashboard();
+            } else {
+                document.getElementById('login-msg').innerText = data.message;
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Không thể kết nối đến Server!");
+        }
+    }
+
+    function logout() {
+        localStorage.clear();
+        location.reload();
+    }
+
+    function showDashboard() {
+        hideAllScreens();
+        document.getElementById('user-controls').classList.remove('hidden');
+        if (currentRole === 'SV') {
+            initSV();
+            checkNotification();
+        } else if (currentRole === 'GV') {
+            initGV();
+        } else if (currentRole === 'ADMIN') {
+            initAdmin();
+        }
+    }
+
+    // --- QUÊN MẬT KHẨU ---
+    function openForgotPass() {
+        document.getElementById('forgot-email').value = '';
+        document.getElementById('forgot-modal').classList.remove('hidden');
+    }
+
+    async function submitForgotPassword() {
+        const email = document.getElementById('forgot-email').value;
+        if (!email) return alert("Vui lòng nhập Email!");
+
+        const btn = event.target;
+        const oldText = btn.innerText;
+        btn.innerText = "Đang gửi...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+            const data = await res.json();
+            alert(data.message);
+            if (data.success) closeModal('forgot-modal');
+        } catch (e) {
+            alert("Lỗi kết nối Server! Vui lòng kiểm tra lại.");
+        } finally {
+            btn.innerText = oldText;
+            btn.disabled = false;
+        }
+    }
+
+    // --- GỬI THÔNG BÁO ---
+    async function sendBroadcast() {
+        const t = document.getElementById('notify-title').value;
+        const c = document.getElementById('notify-content').value;
+        if (!t || !c) return alert("Nhập đủ thông tin!");
+        if (!confirm("Gửi email và thông báo cho TOÀN BỘ sinh viên?")) return;
+
+        const btn = event.target;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/admin/broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tieuDe: t, noiDung: c })
+            });
+            const data = await res.json();
+            alert(data.message);
+        } catch (e) {
+            alert("Lỗi gửi thông báo!");
+        } finally {
+            btn.innerHTML = 'Gửi Ngay';
+            btn.disabled = false;
+        }
+    }
+
+    async function checkNotification() {
+        try {
+            const res = await fetch('/api/notifications');
+            const data = await res.json();
+            if (data.length > 0) {
+                if (!sessionStorage.getItem('read_notify_' + data[0].ID)) {
+                    document.getElementById('popup-title').innerText = data[0].TieuDe;
+                    document.getElementById('popup-content').innerText = data[0].NoiDung;
+                    document.getElementById('notify-modal').classList.remove('hidden');
+                    sessionStorage.setItem('read_notify_' + data[0].ID, '1');
+                }
+            }
+        } catch (e) { console.log("Không lấy được thông báo"); }
+    }
+
+    // --- CÁC HÀM CŨ ---
+    function openChangePass() { document.getElementById('password-modal').classList.remove('hidden'); }
+    async function changePassword() {
+        const o = document.getElementById('old-pass').value;
+        const n = document.getElementById('new-pass').value;
+        if (!o || !n) return alert("Nhập đủ thông tin!");
+        const uid = currentRole === 'SV' ? currentUser.MaSV : (currentRole === 'GV' ? currentUser.MaGV : currentUser.UserID);
+        const res = await fetch('/api/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: uid, role: currentRole, oldPass: o, newPass: n })
+        });
+        const d = await res.json();
+        alert(d.message);
+        if (d.success) closeModal('password-modal');
+    }
+
+    async function initSV() {
+        document.getElementById('sv-dashboard').classList.remove('hidden');
+        document.getElementById('sv-name').innerText = currentUser.HoTen;
+        const res = await fetch(`/api/sv/tasks/${currentUser.MaSV}`);
+        const data = await res.json();
+        const list = document.getElementById('sv-list');
+        list.innerHTML = '';
+        if (!data.isOpen) {
+            list.innerHTML = `<div style='padding:20px;color:red;text-align:center;'>${data.message}</div>`;
+            return;
+        }
+        data.tasks.forEach(t => {
+            let btn = t.TrangThai === 'DaLam' ? '<span class="score-badge high">✔ Đã xong</span>' : `<button class="btn btn-primary" onclick="openEval('${t.MaLop}','${t.TenMonHoc}','${data.maDot}')">Đánh giá</button>`;
+            list.innerHTML += `<div style="padding:15px;border:1px solid #eee;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;background:white;border-radius:6px;"><div><b>${t.TenMonHoc}</b><br><small>GV: ${t.TenGV}</small></div><div>${btn}</div></div>`;
+        });
+    }
+
+    async function openEval(m, t, d) {
+        currentTask = { malop: m, madot: d };
+        document.getElementById('sv-list').classList.add('hidden');
+        document.getElementById('sv-form').classList.remove('hidden');
+        document.getElementById('form-subject').innerText = t;
+        const res = await fetch('/api/questions');
+        const qs = await res.json();
+        const div = document.getElementById('dynamic-questions');
+        div.innerHTML = '';
+        qs.forEach((q, i) => {
+            div.innerHTML += `<div style="margin-bottom:20px;border-bottom:1px dashed #eee;padding-bottom:10px;"><div style="font-weight:600;margin-bottom:10px;">${i + 1}. ${q.NoiDungCauHoi}</div><div style="display:flex;gap:15px;flex-wrap:wrap;">${[1, 2, 3, 4, 5].map(s =>`<label style="cursor:pointer;display:flex;align-items:center;gap:5px;background:#f8f9fa;padding:5px 10px;border-radius:15px;"><input type="radio" name="${q.MaTieuChi}" value="${s}"> ${s}</label>`).join('')}</div></div>`;
+        });
+    }
+
+    async function submitEval() {
+        let inp = document.querySelectorAll('#dynamic-questions input:checked');
+        if (inp.length < 1) return alert("Vui lòng trả lời!");
+        let ans = Array.from(inp).map(i => ({ maTieuChi: i.name, diem: i.value }));
+        await fetch('/api/sv/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                masv: currentUser.MaSV,
+                malop: currentTask.malop,
+                madot: currentTask.madot,
+                answers: ans,
+                ykien: document.getElementById('form-comment').value
+            })
+        });
+        alert("Đã gửi đánh giá thành công!");
+        location.reload();
+    }
+
+    function cancelEval() {
+        location.reload();
+    }
+
+    async function initGV() {
+        document.getElementById('gv-dashboard').classList.remove('hidden');
+        document.getElementById('gv-name').innerText = currentUser.HoTen;
+        const res = await fetch(`/api/analytics?magv=${currentUser.MaGV}`);
+        const data = await res.json();
+        const tbody = document.getElementById('gv-body');
+        tbody.innerHTML = '';
+        data.reports.forEach(r => tbody.innerHTML += `<tr><td>${r.TenMon}</td><td><b style="color:var(--ictu-blue)">${r.DiemTB}</b></td><td><button class="btn btn-info" onclick='showDetails(${JSON.stringify(r.ChiTiet)},${JSON.stringify(r.Comments)})'>Chi Tiết</button></td></tr>`);
+    }
+
+    async function initAdmin() {
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        loadAnalytics();
+        searchUsers();
+        loadProgress();
+        loadQuestions();
+    }
+
+    function switchTab(t) {
+        ['analytics', 'users', 'progress', 'questions', 'notification'].forEach(x => document.getElementById('tab-' + x).classList.add('hidden'));
+        document.getElementById('tab-' + t).classList.remove('hidden');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    async function searchUsers() {
+        const q = document.getElementById('user-search').value;
+        const res = await fetch(`/api/admin/users?q=${q}`);
+        const users = await res.json();
+        const tbody = document.getElementById('user-body');
+        tbody.innerHTML = '';
+        users.forEach(u => {
+            let st = u.TrangThai === 'ACTIVE' ? '<span style="color:green">Hoạt động</span>' : '<span style="color:red">Khóa</span>';
+            let btn = u.TrangThai === 'ACTIVE' ? `<button class="btn btn-danger" onclick="lockUser('${u.ID}','${u.Role}')">Khóa</button>` : `<button class="btn btn-success" onclick="unlockUser('${u.ID}','${u.Role}')">Mở</button>`;
+            tbody.innerHTML += `<tr><td>${u.ID}</td><td>${u.HoTen}</td><td>${u.Info1 || '-'}</td><td>${u.Info2 || '-'}</td><td>${u.Role}</td><td>${st}</td><td>${btn}</td></tr>`;
+        });
+    }
+
+    async function loadQuestions() {
+        const res = await fetch('/api/admin/questions');
+        const qs = await res.json();
+        const tbody = document.getElementById('question-body');
+        tbody.innerHTML = '';
+        qs.forEach(q => {
+            tbody.innerHTML += `<tr><td>${q.MaTieuChi}</td><td>${q.NoiDungCauHoi}</td><td><button class="btn btn-warning" onclick="editQ('${q.MaTieuChi}','${q.NoiDungCauHoi}')">Sửa</button> <button class="btn btn-danger" onclick="delQ('${q.MaTieuChi}')">Xóa</button></td></tr>`;
+        });
+    }
+
+    function openQuestionModal() {
+        document.getElementById('q-id').value = '';
+        document.getElementById('q-content').value = '';
+        document.getElementById('question-modal').classList.remove('hidden');
+    }
+
+    function editQ(id, content) {
+        document.getElementById('q-id').value = id;
+        document.getElementById('q-content').value = content;
+        document.getElementById('question-modal').classList.remove('hidden');
+    }
+
+    async function saveQuestion() {
+        const id = document.getElementById('q-id').value;
+        const content = document.getElementById('q-content').value;
+        if (!content) return alert("Nhập nội dung!");
+        await fetch('/api/admin/question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, content })
+        });
+        closeModal('question-modal');
+        loadQuestions();
+    }
+
+    async function delQ(id) {
+        if (confirm("Xóa?")) {
+            await fetch(`/api/admin/question/${id}`, { method: 'DELETE' });
+            loadQuestions();
+        }
+    }
+
+    async function loadAnalytics() {
+        const res = await fetch('/api/analytics');
+        const data = await res.json();
+        document.getElementById('adm-progress').innerText = `${data.progress.DaLam}/${data.progress.Tong}`;
+        const tbody = document.getElementById('adm-body');
+        tbody.innerHTML = '';
+        window.reportData = data.reports;
+        data.reports.forEach(r => {
+            let cls = parseFloat(r.PhanTram) >= 65 ? 'high' : 'low';
+            tbody.innerHTML += `<tr><td>${r.TenGV}</td><td>${r.TenMon}</td><td><b>${r.DiemTB}</b></td><td><span class="score-badge ${cls}">${r.PhanTram}%</span></td><td><button class="btn btn-info" onclick='showDetails(${JSON.stringify(r.ChiTiet)},${JSON.stringify(r.Comments)})'>Chi Tiết</button></td></tr>`;
+        });
+    }
+
+    function exportICTU(type) {
+        if (!window.reportData || window.reportData.length === 0) return alert("Không có dữ liệu!");
+        let data = window.reportData;
+        if (type === 'HIGH') data = data.filter(r => parseFloat(r.PhanTram) >= 65);
+        if (type === 'LOW') data = data.filter(r => parseFloat(r.PhanTram) < 65);
+        if (data.length === 0) return alert("Không có dữ liệu thỏa mãn!");
+        let rows = [["TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN & TRUYỀN THÔNG"], ["BÁO CÁO KẾT QUẢ"], [`Ngày: ${new Date().toLocaleDateString('vi-VN')}`], [], ["STT", "Giảng Viên", "Môn Học", "Điểm TB", "Tỷ lệ Đạt (%)", "Xếp Loại"]];
+        data.forEach((r, i) => {
+            let pct = parseFloat(r.PhanTram);
+            let rank = pct >= 85 ? "Xuất sắc" : (pct >= 65 ? "Đạt" : "Cần cải thiện");
+            rows.push([i + 1, r.TenGV, r.TenMon, r.DiemTB, `${r.PhanTram}%`, rank]);
+        });
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(rows);
+        if (!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } });
+        ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws, "BaoCao");
+        XLSX.writeFile(wb, `BaoCao_ICTU_${type}.xlsx`);
+    }
+
+    async function loadProgress() {
+        const res = await fetch('/api/admin/progress');
+        const data = await res.json();
+        document.getElementById('stat-total').innerText = data.stats.total;
+        document.getElementById('stat-pending').innerText = data.stats.pending;
+        const tbody = document.getElementById('progress-body');
+        tbody.innerHTML = '';
+        const filter = document.getElementById('filter-incomplete').checked;
+        data.items.forEach(item => {
+            if (filter && item.TrangThai === 'DaLam') return;
+            const statusHTML = item.TrangThai === 'DaLam' ? '<span class="score-badge high">Đã xong</span>' : '<span class="score-badge low">Chưa làm</span>';
+            tbody.innerHTML += `<tr><td><b>${item.TenSV}</b><br><small>${item.MaSV}</small></td><td>${item.LopSH}</td><td>${item.TenMonHoc}</td><td>${item.TenGV}</td><td>${statusHTML}</td></tr>`;
+        });
+    }
+
+    async function loadSettings() {
+        const res = await fetch('/api/admin/settings');
+        const data = await res.json();
+        if (data) {
+            document.getElementById('current-end-date').innerText = data.DenNgay;
+            document.getElementById('new-end-date').value = data.DenNgay;
+        }
+    }
+
+    async function updateTime() {
+        const d = document.getElementById('new-end-date').value;
+        if (!d) return alert("Chọn ngày!");
+        await fetch('/api/admin/update-time', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ denNgay: d })
+        });
+        alert("Đã gia hạn!");
+        loadSettings();
+    }
+
+    async function bulkAction(a) {
+        if (a === 'LOCK' && !confirm("Khóa toàn bộ?")) return;
+        const r = a === 'LOCK' ? prompt("Lý do:") : null;
+        if (a === 'LOCK' && !r) return;
+        await fetch('/api/admin/bulk-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: a === 'LOCK' ? 'LOCK_ALL' : 'UNLOCK_ALL', reason: r })
+        });
+        alert("Thành công!");
+        searchUsers();
+    }
+
+    async function lockUser(id, r) {
+        const rs = prompt("Lý do:");
+        if (rs) {
+            await fetch('/api/admin/lock-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, role: r, action: 'LOCK', reason: rs })
+            });
+            searchUsers();
+        }
+    }
+
+    async function unlockUser(id, r) {
+        if (confirm("Mở?")) {
+            await fetch('/api/admin/lock-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, role: r, action: 'UNLOCK' })
+            });
+            searchUsers();
+        }
+    }
+
+    async function syncData() {
+        if (!confirm("Đồng bộ?")) return;
+        const btn = event.target;
+        const old = btn.innerHTML;
+        btn.innerHTML = 'Loading...';
+        btn.disabled = true;
+        try {
+            const res = await fetch('/api/admin/sync-school-data', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message);
+            searchUsers();
+        } catch (e) {
+            alert("Lỗi!");
+        } finally {
+            btn.innerHTML = old;
+            btn.disabled = false;
+        }
+    }
+
+    function showDetails(d, c) {
+        const div = document.getElementById('modal-content');
+        div.innerHTML = '';
+        for (let k in d) {
+            let s = parseFloat(d[k]);
+            let cls = s >= 4 ? 'high' : (s >= 3 ? 'med' : 'low');
+            div.innerHTML += `<div class="detail-row"><span>${k}</span><span class="score-badge ${cls}">${s}/5</span></div>`;
+        }
+        const cd = document.getElementById('modal-comments');
+        const cl = document.getElementById('comment-list');
+        cl.innerHTML = '';
+        if (c && c.length > 0) {
+            cd.classList.remove('hidden');
+            c.forEach(x => cl.innerHTML += `<div class="comment-item">"${x}"</div>`);
+        } else {
+            cd.classList.add('hidden');
+        }
+        document.getElementById('detail-modal').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    initApp();
+</script>
+</body>
+</html>
