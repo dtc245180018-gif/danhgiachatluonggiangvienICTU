@@ -1,0 +1,22 @@
+[
+{
+    "type": "SINH_VIEN",
+    "data": { 
+        "MaSV": "SV07", "HoTen": "Lý Mỹ Linh (Mới)", 
+        "LopSH": "KT-K23A", "Khoa": "Kế toán", "NienKhoa": "2024-2028" 
+    }
+  },
+  {
+    "type": "GIANG_VIEN",
+    "data": { 
+        "MaGV": "GV07", "HoTen": "Thầy Nguyễn Hữu Khang (Mới)", "HocVi": "Thạc sĩ", "DonViCongTac": "Khoa Kế Toán" 
+    }
+  },
+  {
+    "type": "LOP_HOC_PHAN",
+    "data": { 
+        "MaLop": "MON_MOI_KT", "TenMon": "Nguyên lý thống kê", 
+        "HocKy": "HK2", "MaGV": "GV07", "Khoa": "Kế toán" 
+    }
+  }
+]
